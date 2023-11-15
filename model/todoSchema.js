@@ -5,6 +5,7 @@ const todoSchema = new mongoose.Schema({
     "task":{type:String},
     "label":{type:String},
     "dueDate":{type:Date},
+    "reminderDate": { type: Date }
 },{
     collection:"tasks"
 });
