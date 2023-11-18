@@ -21,7 +21,7 @@ userRoute.post('/login', async (req, res) => {
                 // Add other fields as needed
             }
         });
-
+        
         console.log(user);
     } catch (error) {
         res.status(400).json({
