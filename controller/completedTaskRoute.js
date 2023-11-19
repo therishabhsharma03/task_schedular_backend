@@ -71,4 +71,21 @@ completedTaskRoute.delete("/delete-task/:id", (req,res)=>{
     })
 });
 
+completedTaskRoute.delete("/delete-all-tasks", async (req, res) => {
+    try {
+        // Use the deleteMany function to delete all documents in the collection
+        const result = await completedTaskSchema.deleteMany();
+
+        // Check if any documents were deleted
+        if (result.deletedCount > 0) {
+            res.status(200).json({ message: "All tasks deleted successfully." });
+        } else {
+            res.status(404).json({ message: "No tasks found to delete." });
+        }
+    } catch (error) {
+        // Handle errors, and send an appropriate response
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
 module.exports = completedTaskRoute;
