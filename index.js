@@ -11,7 +11,7 @@ const app = express();
 
 
 mongoose.set("strictQuery" , true);
-mongoose.connect("mongodb+srv://task:task12345@cluster0.m0tvowo.mongodb.net/");
+mongoose.connect("mongodb+srv://task:task12345@cluster0.m0tvowo.mongodb.net/test");
 var db = mongoose.connection;
 db.on("open",()=>console.log("Connected to DB"));
 db.on("error",()=>console.log("Error occurred"));
