@@ -21,7 +21,7 @@ homepage.get("/:userId/tasks", async (req, res) => {
         const userId = req.params.userId;
         console.log("this worked");
         // Fetch tasks from the database for the specified user ID
-        const tasks = await todoSchema.find({ userid: userId });
+        const tasks = await todoSchema.find({ userid: userId }).sort({dueDate:1});
 
         // Respond with the tasks in JSON format
         res.status(200).json(tasks);
