@@ -6,6 +6,7 @@ const mongoose = require("mongoose")
 const moment = require("moment-timezone")
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
+
 homepage.post("/create-task",(req,res)=>{
     
     todoSchema.create(req.body,(err,data)=>{
@@ -45,26 +46,30 @@ homepage.post("/userTasks",async(req,res)=>{
 
 // add tasks
 
-homepage.post('/add-tasks',async(req,res)=>{
-    try{
-        const {userid, task, label, dueDate } = req.body;
-        const dueDateObj = moment(dueDate).toDate();
-        const reminderDate = moment(dueDateObj).subtract(1, 'days').toDate();
-        const newTask = new todoSchema({
-            userid:userid,
-            task: task,
-            label: label,
-            dueDate: dueDateObj,
-            reminderDate: reminderDate,
-          });
-        scheduleReminders();
-        await newTask.save();
-        res.status(201).send("Task Created")
-    }catch(err){
-        console.log(err);
-    }
-})
+homepage.post('/add-tasks', async (req, res) => {
+  try {
+    const { userid, task, label, dueDate } = req.body;
+    const dueDateObj = moment(dueDate).toDate();
+    const reminderDate = moment(dueDateObj).subtract(1, 'days').toDate();
+    const newTask = new todoSchema({
+      userid: userid,
+      task: task,
+      label: label,
+      dueDate: dueDateObj,
+      reminderDate: reminderDate,
+    });
 
+    await newTask.save();
+
+    // Send immediate reminder email to the user
+    sendReminderEmail(newTask);
+
+    res.status(201).send("Task Created");
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+});
 // get tasks
 homepage.post('/get-tasks',async(req,res)=>{
     try {
@@ -93,37 +98,38 @@ homepage.delete("/delete-task/:id", (req,res)=>{
 
 //////////////////////
 const sendReminderEmail = async (task) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            // Provide your email server details here (e.g., SMTP)
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            auth: {
-              user: 'apicheck11@gmail.com',
-              pass: 'atnondyksdbdaxwv'
-            }
-          });
-          const user = await userSchema.findOne({ _id: task.userid });
-          const recipientEmail = user ? user.email : 'recipient@example.com';
-      const mailOptions = {
-        from: 'apicheck11@gmail.com',
-        to: recipientEmail,
-        subject: 'Task Reminder',
-        text: `Reminder: ${task.task} is due on ${moment(task.dueDate).format('YYYY-MM-DD HH:mm')}`,
-      };
-  
-      // Send email
-      await transporter.sendMail(mailOptions);
-      console.log('Reminder email sent successfully');
-    } catch (error) {
-      console.error('Error sending reminder email:', error);
-    }
-  };
+  try {
+    const transporter = nodemailer.createTransport({
+      // Provide your email server details here (e.g., SMTP)
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'apicheck11@gmail.com',
+        pass: 'xjex rlsk vjvj ybne'
+      }
+    });
+
+    const user = await userSchema.findOne({ _id: task.userid });
+    const recipientEmail = user ? user.email : 'recipient@example.com';
+    const mailOptions = {
+      from: 'apicheck11@gmail.com',
+      to: recipientEmail,
+      subject: 'Task Scheduled',
+      text: `Dear ${user.name},\n\n Your task "${task.task}" has been scheduled and is due on ${moment(task.dueDate).format('YYYY-MM-DD HH:mm')}`,
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+    console.log('Task scheduled email sent successfully');
+  } catch (error) {
+    console.error('Error sending task scheduled email:', error);
+  }
+};
   
   // Function to schedule reminders using cron
-  const scheduleReminders = () => {
-    cron.schedule('* * * * *', async () => {
+  const scheduleReminderstoOne = () => {
+    cron.schedule('* * * * 8', async () => {
       // Run this task every day at 8:00 AM
       try {
         const today = moment().startOf('day');
@@ -142,6 +148,40 @@ const sendReminderEmail = async (task) => {
         tasksDueTomorrow.forEach((task) => {
           sendReminderEmail(task);
         });
+      } catch (error) {
+        console.error('Error scheduling reminders:', error);
+      }
+    });
+  };
+
+  const scheduleReminders = () => {
+    cron.schedule('* * * * *', async () => {
+      // Run this task every day at 8:00 AM
+      try {
+        const today = moment().startOf('day');
+        const tomorrow = moment(today).add(1, 'days');
+        
+        // Fetch all users
+        const allUsers = await userSchema.find();
+  
+        // Iterate over each user
+        for (const user of allUsers) {
+          // Find tasks due tomorrow for the current user
+          const tasksDueTomorrow = await todoSchema.find({
+            userid: user._id,
+            dueDate: {
+              $gte: today.toDate(),
+              $lt: tomorrow.toDate(),
+            },
+          });
+          
+          // Send reminders for tasks due tomorrow for the current user
+          tasksDueTomorrow.forEach((task) => {
+            sendReminderEmail(task);
+          });
+        }
+        console.log("scheduled");
+  
       } catch (error) {
         console.error('Error scheduling reminders:', error);
       }
